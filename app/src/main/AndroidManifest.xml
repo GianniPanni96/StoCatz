@@ -3,6 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools" >
 
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- READ_EXTERNAL_STORAGE serve solo fino ad Android 12 (API 32); da Android 13 il
+         sistema Photo Picker gestisce i permessi internamente senza che l'app li chieda. -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
     <uses-feature
         android:name="android.hardware.camera.any"
