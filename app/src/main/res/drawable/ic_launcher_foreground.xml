@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Carta (sfondo bianco, angoli arrotondati) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,29 Q22,24 27,24 L81,24 Q86,24 86,29 L86,79 Q86,84 81,84 L27,84 Q22,84 22,79 Z" />
+
+    <!-- Chip EMV (oro) -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M30,32 Q30,30 32,30 L52,30 Q54,30 54,32 L54,44 Q54,46 52,46 L32,46 Q30,46 30,44 Z" />
+
+    <!-- Linee del chip (dettaglio circuito) -->
+    <path
+        android:fillColor="#E6A800"
+        android:pathData="M30,37 H54 V38.5 H30 Z M41,30 H43 V46 H41 Z" />
+
+    <!-- Barre del codice a barre -->
+    <path
+        android:fillColor="#1A237E"
+        android:pathData="
+        M28,52 H31 V74 H28 Z
+        M33,52 H34 V74 H33 Z
+        M36,52 H39 V74 H36 Z
+        M41,52 H42 V74 H41 Z
+        M44,52 H47 V74 H44 Z
+        M49,52 H50 V74 H49 Z
+        M52,52 H55 V74 H52 Z
+        M57,52 H58 V74 H57 Z
+        M60,52 H63 V74 H60 Z
+        M65,52 H66 V74 H65 Z
+        M68,52 H71 V74 H68 Z
+        M73,52 H74 V74 H73 Z
+        M76,52 H79 V74 H76 Z" />
+</vector>
