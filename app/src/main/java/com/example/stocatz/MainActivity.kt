@@ -25,7 +25,6 @@ import com.example.stocatz.ui.CardViewModel
 import com.example.stocatz.ui.ScannerScreen
 import com.example.stocatz.ui.theme.StoCatzTheme
 
-/** Le schermate dell'app. */
 private sealed interface Screen {
     data object List : Screen
     data object Scan : Screen
@@ -48,33 +47,33 @@ class MainActivity : ComponentActivity() {
 private fun StoCatzApp() {
     val context = LocalContext.current
     val viewModel: CardViewModel = viewModel()
+
+    // Liste carte: filtrata (per la lista) e completa (per il dettaglio)
     val cards by viewModel.cards.collectAsStateWithLifecycle()
+    val allCards by viewModel.allCards.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
     var screen by remember { mutableStateOf<Screen>(Screen.List) }
-    // Risultato della scansione in attesa di un nome (mostra il dialog di salvataggio).
     var pendingScan by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) screen = Screen.Scan
-    }
+    ) { granted -> if (granted) screen = Screen.Scan }
 
     fun startScan() {
-        val alreadyGranted = ContextCompat.checkSelfPermission(
+        val granted = ContextCompat.checkSelfPermission(
             context, Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
-        if (alreadyGranted) {
-            screen = Screen.Scan
-        } else {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
+        if (granted) screen = Screen.Scan
+        else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
     when (val current = screen) {
         Screen.List -> CardListScreen(
             cards = cards,
-            onAddClick = { startScan() },
+            searchQuery = searchQuery,
+            onSearchQueryChange = viewModel::setSearchQuery,
+            onAddClick = ::startScan,
             onCardClick = { screen = Screen.Detail(it.id) }
         )
 
@@ -87,9 +86,9 @@ private fun StoCatzApp() {
         )
 
         is Screen.Detail -> {
-            val card: LoyaltyCard? = cards.firstOrNull { it.id == current.cardId }
+            // Cerchiamo nella lista completa (non filtrata) per ID
+            val card: LoyaltyCard? = allCards.firstOrNull { it.id == current.cardId }
             if (card == null) {
-                // La carta non esiste più (es. eliminata): torna all'elenco.
                 screen = Screen.List
             } else {
                 CardDetailScreen(
@@ -98,6 +97,9 @@ private fun StoCatzApp() {
                     onDelete = {
                         viewModel.deleteCard(card.id)
                         screen = Screen.List
+                    },
+                    onUpdateColors = { bg, txt ->
+                        viewModel.updateCardColors(card.id, bg, txt)
                     }
                 )
             }
@@ -108,8 +110,14 @@ private fun StoCatzApp() {
         AddCardDialog(
             value = value,
             format = format,
-            onConfirm = { name ->
-                viewModel.addCard(name = name, value = value, format = format)
+            onConfirm = { name, bgColor, txtColor ->
+                viewModel.addCard(
+                    name = name,
+                    value = value,
+                    format = format,
+                    backgroundColor = bgColor,
+                    textColor = txtColor
+                )
                 pendingScan = null
             },
             onDismiss = { pendingScan = null }

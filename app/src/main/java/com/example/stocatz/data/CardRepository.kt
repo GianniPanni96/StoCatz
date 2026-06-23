@@ -33,6 +33,13 @@ class CardRepository(private val context: Context) {
         }
     }
 
+    suspend fun updateCard(card: LoyaltyCard) {
+        context.dataStore.edit { prefs ->
+            val updated = decode(prefs[cardsKey]).map { if (it.id == card.id) card else it }
+            prefs[cardsKey] = json.encodeToString(listSerializer, updated)
+        }
+    }
+
     suspend fun deleteCard(id: String) {
         context.dataStore.edit { prefs ->
             val updated = decode(prefs[cardsKey]).filterNot { it.id == id }

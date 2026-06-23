@@ -12,17 +12,23 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -33,6 +39,8 @@ import com.example.stocatz.data.LoyaltyCard
 @Composable
 fun CardListScreen(
     cards: List<LoyaltyCard>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     onAddClick: () -> Unit,
     onCardClick: (LoyaltyCard) -> Unit
 ) {
@@ -46,21 +54,47 @@ fun CardListScreen(
             )
         }
     ) { innerPadding ->
-        if (cards.isEmpty()) {
-            EmptyState(modifier = Modifier.fillMaxSize().padding(innerPadding))
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    top = innerPadding.calculateTopPadding() + 8.dp,
-                    bottom = innerPadding.calculateBottomPadding() + 88.dp,
-                    start = 16.dp,
-                    end = 16.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(cards, key = { it.id }) { card ->
-                    CardRow(card = card, onClick = { onCardClick(card) })
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding())
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                placeholder = { Text("Cerca per nome o codice...") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { onSearchQueryChange("") }) {
+                            Icon(Icons.Filled.Close, contentDescription = "Cancella ricerca")
+                        }
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            when {
+                cards.isEmpty() && searchQuery.isNotBlank() -> NoResults(
+                    query = searchQuery,
+                    modifier = Modifier.fillMaxSize()
+                )
+                cards.isEmpty() -> EmptyState(modifier = Modifier.fillMaxSize())
+                else -> LazyColumn(
+                    contentPadding = PaddingValues(
+                        bottom = innerPadding.calculateBottomPadding() + 88.dp,
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 4.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(cards, key = { it.id }) { card ->
+                        CardRow(card = card, onClick = { onCardClick(card) })
+                    }
                 }
             }
         }
@@ -72,23 +106,37 @@ private fun CardRow(card: LoyaltyCard, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = Color(card.backgroundColor))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = card.name,
                 style = MaterialTheme.typography.titleMedium,
+                color = Color(card.textColor),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "${BarcodeGenerator.humanReadableFormat(card.format)} · ${card.value}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color(card.textColor).copy(alpha = 0.7f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+@Composable
+private fun NoResults(query: String, modifier: Modifier = Modifier) {
+    Box(modifier = modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+        Text(
+            text = "Nessuna carta trovata per \"$query\".",
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

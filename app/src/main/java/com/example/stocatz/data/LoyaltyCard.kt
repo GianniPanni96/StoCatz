@@ -16,5 +16,7 @@ data class LoyaltyCard(
     val id: String,
     val name: String,
     val value: String,
-    val format: String
+    val format: String,
+    val backgroundColor: Int = 0xFF1565C0.toInt(),
+    val textColor: Int = 0xFFFFFFFF.toInt()
 )
