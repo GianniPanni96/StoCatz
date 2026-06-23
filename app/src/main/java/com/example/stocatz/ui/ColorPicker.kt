@@ -41,6 +41,17 @@ val BACKGROUND_COLORS: List<Int> = listOf(
 val TEXT_COLORS: List<Int> = listOf(
     0xFFFFFFFF.toInt(), // Bianco
     0xFF212121.toInt(), // Nero
+    0xFF283593.toInt(), // Indaco
+    0xFF6A1B9A.toInt(), // Viola
+    0xFFAD1457.toInt(), // Rosa
+    0xFFB71C1C.toInt(), // Rosso
+    0xFFBF360C.toInt(), // Arancione scuro
+    0xFF2E7D32.toInt(), // Verde
+    0xFF00695C.toInt(), // Verde acqua
+    0xFF37474F.toInt(), // Ardesia
+    0xFF212121.toInt(), // Nero
+    0xFFEEEEEE.toInt(), // Bianco grigio
+    0xFFFFD54F.toInt(), // Oro
 )
 
 val DEFAULT_CARD_BACKGROUND: Int = 0xFF1565C0.toInt()
