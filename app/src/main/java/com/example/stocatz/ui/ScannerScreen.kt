@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 @OptIn(ExperimentalGetImage::class)
 private class BarcodeAnalyzer(
     private val onDetected: (value: String, format: String) -> Unit
-) : ImageAnalysis.Analyzer {
+) : ImageAnalysis.Analyzer, AutoCloseable {
 
     private val scanner = BarcodeScanning.getClient()
     private val done = AtomicBoolean(false)
@@ -73,6 +73,8 @@ private class BarcodeAnalyzer(
             .addOnFailureListener { Log.e("BarcodeAnalyzer", "Scansione fallita", it) }
             .addOnCompleteListener { imageProxy.close() }
     }
+
+    override fun close() = scanner.close()
 }
 
 /**
@@ -93,6 +95,7 @@ fun ScannerScreen(
 
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
         val cameraProvider = cameraProviderFuture.get()
+        val analyzer = BarcodeAnalyzer(onBarcodeDetected)
 
         val preview = Preview.Builder().build().also {
             it.setSurfaceProvider(previewView.surfaceProvider)
@@ -100,7 +103,7 @@ fun ScannerScreen(
         val analysis = ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
-            .also { it.setAnalyzer(analysisExecutor, BarcodeAnalyzer(onBarcodeDetected)) }
+            .also { it.setAnalyzer(analysisExecutor, analyzer) }
 
         try {
             cameraProvider.unbindAll()
@@ -116,6 +119,7 @@ fun ScannerScreen(
 
         onDispose {
             cameraProvider.unbindAll()
+            analyzer.close()          // chiude il client ML Kit
             analysisExecutor.shutdown()
         }
     }

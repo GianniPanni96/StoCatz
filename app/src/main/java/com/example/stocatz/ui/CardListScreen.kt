@@ -10,10 +10,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -31,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,8 +57,23 @@ fun CardListScreen(
     onAddByPhoto: () -> Unit,
     onCardClick: (LoyaltyCard) -> Unit
 ) {
+    // Persiste tra rotazioni e process death; non serve DataStore per una preferenza UI
+    var isGridView by rememberSaveable { mutableStateOf(false) }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Le mie carte") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Le mie carte") },
+                actions = {
+                    IconButton(onClick = { isGridView = !isGridView }) {
+                        Icon(
+                            imageVector = if (isGridView) Icons.Filled.ViewList else Icons.Filled.GridView,
+                            contentDescription = if (isGridView) "Vista lista" else "Vista griglia"
+                        )
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             var menuOpen by remember { mutableStateOf(false) }
             Box {
@@ -98,18 +119,34 @@ fun CardListScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
+            val bottomPadding = innerPadding.calculateBottomPadding() + 88.dp
+
             when {
-                cards.isEmpty() && searchQuery.isNotBlank() -> NoResults(
-                    query = searchQuery,
+                cards.isEmpty() && searchQuery.isNotBlank() ->
+                    NoResults(query = searchQuery, modifier = Modifier.fillMaxSize())
+
+                cards.isEmpty() ->
+                    EmptyState(modifier = Modifier.fillMaxSize())
+
+                isGridView -> LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(
+                        start = 16.dp, end = 16.dp,
+                        top = 4.dp, bottom = bottomPadding
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize()
-                )
-                cards.isEmpty() -> EmptyState(modifier = Modifier.fillMaxSize())
+                ) {
+                    items(cards, key = { it.id }) { card ->
+                        CardGridItem(card = card, onClick = { onCardClick(card) })
+                    }
+                }
+
                 else -> LazyColumn(
                     contentPadding = PaddingValues(
-                        bottom = innerPadding.calculateBottomPadding() + 88.dp,
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 4.dp
+                        bottom = bottomPadding,
+                        start = 16.dp, end = 16.dp, top = 4.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -121,6 +158,8 @@ fun CardListScreen(
         }
     }
 }
+
+// ── Vista lista ───────────────────────────────────────────────────────────────
 
 @Composable
 private fun CardRow(card: LoyaltyCard, onClick: () -> Unit) {
@@ -148,6 +187,47 @@ private fun CardRow(card: LoyaltyCard, onClick: () -> Unit) {
         }
     }
 }
+
+// ── Vista griglia ─────────────────────────────────────────────────────────────
+
+@Composable
+private fun CardGridItem(card: LoyaltyCard, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            // proporzioni simili a una carta di credito
+            .then(Modifier.padding(0.dp)) // necessario per far rispettare aspectRatio in grid
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = Color(card.backgroundColor))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 18.dp)
+        ) {
+            Text(
+                text = card.name,
+                style = MaterialTheme.typography.titleSmall,
+                color = Color(card.textColor),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+            Text(
+                text = BarcodeGenerator.humanReadableFormat(card.format),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(card.textColor).copy(alpha = 0.65f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(top = 32.dp)
+            )
+        }
+    }
+}
+
+// ── Placeholder ───────────────────────────────────────────────────────────────
 
 @Composable
 private fun NoResults(query: String, modifier: Modifier = Modifier) {
